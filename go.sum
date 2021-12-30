@@ -1,0 +1,6 @@
+github.com/wii-tools/GoNUSD v0.2.1 h1:HW8vssrEiCdFjiugCx3cTTaPw9nlz1TWxzeCqXKqTnQ=
+github.com/wii-tools/GoNUSD v0.2.1/go.mod h1:jMYMU5X81Hp0R+bq6/0AxAOijGHXfexaG6dLRilgS2s=
+github.com/wii-tools/arclib v1.0.0 h1:OAmbL3NDUmlR0wa1VpJhxnKiIRFZz1CC40lTVPUm8Ms=
+github.com/wii-tools/arclib v1.0.0/go.mod h1:uXFan/NSXoQ2pOVPN4ugZ4nJX7esBnjB1QUgVrEzK/4=
+github.com/wii-tools/wadlib v0.3.0 h1:ZPCjuiwn9AG2og5paVeP7eH3nfjWC2iL4u8WW5nOJ4U=
+github.com/wii-tools/wadlib v0.3.0/go.mod h1:GK+f2POk+rVu1p4xqLSb4ll1SKKbfOO6ZAB+oPLV3uQ=

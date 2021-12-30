@@ -1,0 +1,75 @@
+meta:
+  id: dat
+  file-extension: dat
+  endian: be
+  # Derived from
+  # https://web.archive.org/web/20090208111457/http://www.opera.com/docs/fileformats/
+seq:
+  - id: file_version_number
+    type: u4
+  - id: app_version_number
+    type: u4
+  - id: idtag_length
+    # Asserted to always have a tag length of 1.
+    contents: [0x00, 0x01]
+  - id: length_length
+    # Asserted to always have a length of 4.
+    contents: [0x00, 0x04]
+  - id: tags
+    type: tag
+    # repeat: eos
+
+types:
+  tag:
+    seq:
+      - id: tag_type
+        type: u1
+        enum: tag_types
+      - id: tag_size
+        type: u4
+      - id: tag_contents
+        type:
+          switch-on: tag_type
+          cases:
+            'tag_types::ca_certificate': ca_tag
+
+  # All of this should technically not be sequential, but it always is for our purposes.
+  # If you wish to adapt this for other Opera usage, please adjust accordingly!
+  ca_tag:
+    seq:
+      - id: cert_type_tag
+        # 'tag_types::ssl_cert_type'
+        contents: [0x20]
+      - id: cert_type_length
+        type: u4
+      - id: cert_type
+        type: u4
+      - id: cert_name_tag
+        contents: [0x21]
+      - id: cert_name_length
+        type: u4
+      - id: cert_name
+        type: str
+        size: cert_name_length
+        encoding: UTF-8
+      - id: cert_subject_tag
+        contents: [0x22]
+      - id: cert_subject_length
+        type: u4
+      - id: cert_subject
+        size: cert_subject_length
+      - id: cert_contents_tag
+        contents: [0x23]
+      - id: cert_contents_length
+        type: u4
+      - id: cert_contents
+        size: cert_contents_length
+
+enums:
+  tag_types:
+    0x02: ca_certificate
+    0x03: user_certificate
+    0x04: user_password
+    0x20: ssl_cert_type
+    0x21: ssl_cert_name
+    0x22: ssl_cert_subject
