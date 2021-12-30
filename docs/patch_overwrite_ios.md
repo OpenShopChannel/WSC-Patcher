@@ -67,12 +67,14 @@ However, space constraints for our patch made this difficult. We chose to hardco
 By default, the PowerPC core (Broadway) has memory protections enabled, preventing from us editing IOS's memory in MEM2.
 We need to apply several patches to achieve our goal.
 
-1. e need to obtain access to overwriting IOS memory.
+---
+First, we need to obtain access to overwriting IOS memory.
 We set the Access Rights field in the WAD's Title Metadata (or `.tmd`) to 0x00000003, permitting memory access. We will use this with `MEM2_PROT` later.
 
 This is thankfully a very quick fix.
 
-2. We need to find space to put our own custom function within the binary.
+---
+Second, we need to find space to put our own custom function within the binary.
 
 Via symbols within the main ARC, we find a C++ class named `textinput::EventObserver` with 4 functions in a row that
 immediately `blr` - returning with no other logic:
@@ -88,7 +90,8 @@ We must additionally update references to this single at two separate virtual ta
   - `textinput::EventObserver` at `0x802f7a9`
   - `ipl::keyboard::EventObserver` at `0x802f8418`
 
-3. We need to devise a way to have the channel overwrite IOS memory.
+---
+Next, we need to devise a way to have the channel overwrite IOS memory.
 
 We have carved out our own space at `0x80014428` to put a function.
 Thankfully, the operation is fairly simple:
@@ -104,33 +107,33 @@ Thankfully, the operation is fairly simple:
 We write and apply the following PowerPC assembly to achieve this task:
 ```asm
 overwriteIOSPatch:
-    ; Load 0x0d8b420a, location of MEM_PROT, to r9.
-    lis r9, 0xcd8b
-    ori r9, r9, 0x420a
-    ; We wish to write 0x2 in order to disable.
-    li r10, 0x2
+  ; Load 0x0d8b420a, location of MEM_PROT, to r9.
+  lis r9, 0xcd8b
+  ori r9, r9, 0x420a
+  ; We wish to write 0x2 in order to disable.
+  li r10, 0x2
+
+  ; And... write!
+  sth r10, 0x0(r9)
+  eieio
     
-    ; And... write!
-    sth r10, 0x0(r9)
-    eieio
-    
-    ; Load 0xd3a73ad4, location of of IOSC_VerifyPublicKeySig, to r9.
-    lis r9, 0xd3a7
-    ori r9, r9, 0x73ad4
-    ; 0x20004770 represents our actual patch.
-    lis r10, 0x2000
-    ori r10, r10, 0x4770
-	
-	; And... write.
-	stw r10, 0x0(r9)
-	
-	; Clear cache
-	dcbi 0, r10
-	blr
+  ; Load 0xd3a73ad4, location of of IOSC_VerifyPublicKeySig, to r9.
+  lis r9, 0xd3a7
+  ori r9, r9, 0x73ad4
+  ; 0x20004770 represents our actual patch.
+  lis r10, 0x2000
+  ori r10, r10, 0x4770
+
+  ; And... write.
+  stw r10, 0x0(r9)
+
+  ; Clear cache
+  dcbi 0, r10
+  blr
 ```
 
-
-4. We need to determine the best way to call our custom patching function.
+---
+Finally, we need to determine the best way to call our custom patching function.
 Using the aforementioned symbols we find `ES_InitLib`, called once during initialization to open a handle with `/dev/es`.
 
 We insert a call to our function in its epilog, immediately before loading the previous LR from stack and branching back.
