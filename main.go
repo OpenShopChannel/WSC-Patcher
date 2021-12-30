@@ -84,6 +84,14 @@ func main() {
 	mainDol, err = originalWad.GetContent(1)
 	check(err)
 
+	// Permit r/w access to MEM2_PROT via the TMD.
+	// See docs/patch_overwrite_ios.md for more information!
+	originalWad.TMD.AccessRightsFlags = 0x3
+
+	// Apply all DOL patches
+	log.Println("Applying DOL patches...")
+	applyDefaultPatches()
+
 	// Load main ARC
 	arcData, err := originalWad.GetContent(2)
 	check(err)

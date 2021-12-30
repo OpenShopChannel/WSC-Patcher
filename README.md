@@ -34,6 +34,6 @@ Throughout its operation, the patcher will perform the following:
  - If `output/root.cer` is not present, a 1024-bit (RSA), SHA-1 CA certificate will be generated.
    - At the same time, `*.<basedomain>` will be issued for ease of use. See `output/server.pem` and `output/server.key` for usage with nginx or similar servers.
  - Modifications are made to the application's main `.arc` (within content index 2) to permit Opera loading the base domain, and the customized certificates.
- - Patches to the application's main dol are also performed. Please see `patches.go` for more information on what these contain.
+ - Patches to the application's main dol are also performed. Please see `docs/patch_<name>.md` for more information on what these contain.
  - The patched WAD is written to disk.
  
