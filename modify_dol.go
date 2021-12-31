@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	"github.com/logrusorgru/aurora/v3"
 )
 
@@ -20,6 +21,9 @@ type Patch struct {
 	Name string
 
 	// AtOffset is the offset within the file this patch should be applied at.
+	// If not present, the patch will be recursively applied across the entire file.
+	// Relying on this behavior is highly discouraged, as it may damage other parts of the binary
+	// if gone unchecked.
 	AtOffset int
 
 	// Before is an array of the bytes to find for, i.e. present within the original file.
@@ -43,21 +47,28 @@ func applyPatch(patch Patch) error {
 	if len(patch.Before) != len(patch.After) {
 		return ErrInconsistentPatch
 	}
-	if patch.AtOffset > len(mainDol) {
+	if patch.AtOffset != 0 && patch.AtOffset > len(mainDol) {
 		return ErrPatchOutOfRange
 	}
 
 	// Either Before or After should return the same length.
 	patchLen := len(patch.Before)
 
-	// Ensure original bytes are present
-	originalBytes := mainDol[patch.AtOffset : patch.AtOffset+patchLen]
-	if !bytes.Equal(originalBytes, patch.Before) {
-		return ErrInvalidPatch
-	}
+	// Determine our patching behavior.
+	if patch.AtOffset != 0 {
+		// Ensure original bytes are present
+		originalBytes := mainDol[patch.AtOffset : patch.AtOffset+patchLen]
+		if !bytes.Equal(originalBytes, patch.Before) {
+			return ErrInvalidPatch
+		}
 
-	// Apply patch
-	copy(mainDol[patch.AtOffset:], patch.After)
+		// Apply patch at the specified offset
+		copy(mainDol[patch.AtOffset:], patch.After)
+	} else {
+		// Recursively apply this patch.
+		// We cannot verify if the original contents are present via this.
+		mainDol = bytes.ReplaceAll(mainDol, patch.Before, patch.After)
+	}
 
 	return nil
 }
@@ -80,5 +91,6 @@ func emptyBytes(length int) []byte {
 // applyDefaultPatches iterates through a list of default patches.
 func applyDefaultPatches() {
 	applyPatchSet("Overwrite IOS Syscall for ES", OverwriteIOSPatch)
-	applyPatchSet("Load Custom CA within IOS", LoadCustomCA(rootCertificate))
+	applyPatchSet("Load Custom CA within IOS", LoadCustomCA())
+	applyPatchSet("Change Base Domain", PatchBaseDomain())
 }
