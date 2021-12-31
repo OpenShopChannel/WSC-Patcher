@@ -107,9 +107,7 @@ func main() {
 	// Apply all DOL patches
 	fmt.Println(aurora.Green("Applying DOL patches..."))
 	applyDefaultPatches()
-
-	ioutil.WriteFile("/Users/spot/Desktop/patched.app", mainDol, 0755)
-
+	
 	// Load main ARC
 	arcData, err := originalWad.GetContent(2)
 	check(err)

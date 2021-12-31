@@ -4,14 +4,14 @@ package main
 // into the IOS trust store for EC usage.
 // It is assumed that rootCertificate has been loaded upon invoking this patchset.
 // See docs/patch_custom_ca_ios.md for more information.
-func LoadCustomCA(rootCert []byte) PatchSet {
+func LoadCustomCA() PatchSet {
 	return PatchSet{
 		Patch{
 			Name:     "Insert custom CA into free space",
 			AtOffset: 3037368,
 
-			Before: emptyBytes(len(rootCert)),
-			After:  rootCert,
+			Before: emptyBytes(len(rootCertificate)),
+			After:  rootCertificate,
 		},
 		Patch{
 			Name:     "Modify NHTTPi_SocSSLConnect to load cert",
@@ -77,7 +77,7 @@ func LoadCustomCA(rootCert []byte) PatchSet {
 				// r5 is the third parameter of SSLSetRootCA, the cert_length field.
 				// xor r5, r5, r5
 				Instruction{0x7c, 0xa5, 0x2a, 0x78},
-				ADDI(R5, R5, uint16(len(rootCert))),
+				ADDI(R5, R5, uint16(len(rootCertificate))),
 
 				// r3 is the first parameter of SSLSetRootCA, the ssl_fd.
 				// We load it exactly as Nintendo does.

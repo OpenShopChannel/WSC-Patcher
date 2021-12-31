@@ -1,7 +1,7 @@
 # Patch: Overwrite IOS Syscall for ES
 
 ## Motivation
-When installing a custom title via the Wii Shop Channel, the signature expects a valid signature.
+When installing a custom title via the Wii Shop Channel, ES expects valid signatures and certificates.
 Most homebrew-based WAD installers apply IOS patches or manually insert contents to their proper place.
 However, as we use Nintendo's official code, we lack this luxury.
 
