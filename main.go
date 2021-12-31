@@ -107,7 +107,11 @@ func main() {
 	// Apply all DOL patches
 	fmt.Println(aurora.Green("Applying DOL patches..."))
 	applyDefaultPatches()
-	
+
+	// Save main DOL
+	err = originalWad.UpdateContent(1, mainDol)
+	check(err)
+
 	// Load main ARC
 	arcData, err := originalWad.GetContent(2)
 	check(err)

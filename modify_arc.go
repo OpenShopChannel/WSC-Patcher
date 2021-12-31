@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/x509"
 	"encoding/binary"
 	"fmt"
@@ -27,7 +28,9 @@ miip:*
 [exclude]
 *`, baseDomain)
 
-	file.Write([]byte(filter))
+	// Replace UNIX line (LR) returns with that of Windows (CRLF).
+	output := bytes.ReplaceAll([]byte(filter), []byte("\n"), []byte("\r\n"))
+	file.Write(output)
 }
 
 // Tag represents a single byte representing a tag's ID.
