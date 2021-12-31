@@ -4,15 +4,10 @@ package main
 // See docs/patch_overwrite_ios.md for more information.
 var OverwriteIOSPatch = PatchSet{
 	Patch{
-		Name:     "Clear textinput::EventObserver functions",
-		AtOffset: 20320,
+		Name:     "Clear extraneous textinput::EventObserver functions",
+		AtOffset: 20336,
 
 		Before: Instructions{
-			// Function: textinput::EventObserver::onSE
-			BLR(),
-			padding,
-			padding,
-			padding,
 			// Function: textinput::EventObserver::onEvent
 			BLR(),
 			padding,
@@ -32,9 +27,7 @@ var OverwriteIOSPatch = PatchSet{
 
 		// We wish to clear extraneous blrs so that our custom overwriteIOSMemory
 		// function does not somehow conflict. We only preserve onSE.
-		After: append(Instructions{
-			BLR(),
-		}.toBytes(), emptyBytes(60)...),
+		After: emptyBytes(48),
 	},
 	Patch{
 		Name:     "Repair textinput::EventObserver vtable",

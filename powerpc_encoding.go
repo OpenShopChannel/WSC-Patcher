@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/binary"
-	"encoding/hex"
-	"log"
 )
 
 // Register represents a value for a PowerPC register.
@@ -114,10 +112,6 @@ func EncodeInstrDForm(opcode byte, rT Register, rA Register, value uint16) Instr
 	firstInstr := instr[0].getByte()
 	secondInstr := instr[1].getByte()
 	valByte := twoByte(value)
-
-	log.Println(hex.EncodeToString([]byte{
-		firstInstr, secondInstr, valByte[0], valByte[1],
-	}))
 
 	return Instruction{firstInstr, secondInstr, valByte[0], valByte[1]}
 }
