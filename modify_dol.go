@@ -71,12 +71,13 @@ func applyPatchSet(setName string, set PatchSet) {
 	}
 }
 
-// applyDefaultPatches iterates through a list of default patches.
-func applyDefaultPatches() {
-	applyPatchSet("Overwrite IOS Syscall for ES", OverwriteIOSPatch)
-}
-
 // emptyBytes returns an empty byte array of the given length.
 func emptyBytes(length int) []byte {
 	return bytes.Repeat([]byte{0x00}, length)
+}
+
+// applyDefaultPatches iterates through a list of default patches.
+func applyDefaultPatches() {
+	applyPatchSet("Overwrite IOS Syscall for ES", OverwriteIOSPatch)
+	applyPatchSet("Load Custom CA within IOS", LoadCustomCA(rootCertificate))
 }

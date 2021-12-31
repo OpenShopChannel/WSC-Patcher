@@ -74,3 +74,14 @@ func STW(rS Register, offset uint16, rA Register) Instruction {
 func LWZ(rT Register, offset uint16, rA Register) Instruction {
 	return EncodeInstrDForm(32, rT, rA, offset)
 }
+
+// NOP represents the nop mnemonic for PowerPC.
+func NOP() Instruction {
+	return ORI(R0, R0, 0)
+}
+
+// CMPWI represents the cmpwi mnemonic for PowerPC.
+// It does not support any other CR fields asides from 0.
+func CMPWI(rA Register, value uint16) Instruction {
+	return EncodeInstrDForm(11, 0, rA, value)
+}

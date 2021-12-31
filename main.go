@@ -20,6 +20,7 @@ var mainDol []byte
 // mainArc holds the main ARC - our content at index 2.
 var mainArc *arclib.ARC
 
+
 // filePresent returns whether the specified path is present on disk.
 func filePresent(path string) bool {
 	_, err := os.Stat(path)
@@ -77,7 +78,18 @@ func main() {
 	// Determine whether a certificate authority was provided, or generated previously.
 	if !filePresent("./output/root.cer") {
 		log.Println("Generating root certificates...")
-		createCertificates()
+		rootCertificate = createCertificates()
+	} else {
+		rootCertificate, err = ioutil.ReadFile("./output/root.cer")
+		check(err)
+	}
+
+	// Ensure the loaded certificate has a suitable length.
+	// It must not be longer than 928 bytes.
+	if len(rootCertificate) > 928 {
+		fmt.Println("The passed root certificate exceeds the maximum length possible, 928 bytes.")
+		fmt.Println("Please verify parameters passed for generation and reduce its size.")
+		os.Exit(-1)
 	}
 
 	// Load main DOL
