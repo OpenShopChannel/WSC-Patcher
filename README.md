@@ -5,6 +5,13 @@ This is useful for research and development of services utilizing the WSC.
 
 It is important to read the following so that you will have a usable WAD available upon patch completion.
 
+## Running
+You can likely obtain a prebuilt binary for your platform on the [Releases](https://github.com/OpenShopChannel/WSC-Patcher/releases) tab.
+
+If one is unavailable, or you wish to follow along with current development:
+ - Ensure [Go](https://go.dev/dl/) is installed, possibly via a package manager. You will need Go 1.17 or later.
+ - Run `go install github.com/OpenShopChannel/WSC-Patcher@latest`, possibly replacing `latest` with a specific tag.
+
 ## Setup
 You will need an externally resolvable domain with four subdomains:
  - `oss-auth`, utilized for the Wii Shop's main HTML
