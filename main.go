@@ -3,10 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/wii-tools/GoNUSD"
 	"github.com/wii-tools/arclib"
 	"github.com/wii-tools/wadlib"
 	"io/fs"
+	"io/ioutil"
 	"log"
 	"os"
 )
@@ -20,6 +22,8 @@ var mainDol []byte
 // mainArc holds the main ARC - our content at index 2.
 var mainArc *arclib.ARC
 
+// rootCertificate holds the public certificate, in DER form, to be patched in.
+var rootCertificate []byte
 
 // filePresent returns whether the specified path is present on disk.
 func filePresent(path string) bool {
@@ -77,7 +81,7 @@ func main() {
 
 	// Determine whether a certificate authority was provided, or generated previously.
 	if !filePresent("./output/root.cer") {
-		log.Println("Generating root certificates...")
+		fmt.Println(aurora.Green("Generating root certificates..."))
 		rootCertificate = createCertificates()
 	} else {
 		rootCertificate, err = ioutil.ReadFile("./output/root.cer")
@@ -101,8 +105,10 @@ func main() {
 	originalWad.TMD.AccessRightsFlags = 0x3
 
 	// Apply all DOL patches
-	log.Println("Applying DOL patches...")
+	fmt.Println(aurora.Green("Applying DOL patches..."))
 	applyDefaultPatches()
+
+	ioutil.WriteFile("/Users/spot/Desktop/patched.app", mainDol, 0755)
 
 	// Load main ARC
 	arcData, err := originalWad.GetContent(2)
@@ -111,7 +117,7 @@ func main() {
 	check(err)
 
 	// Generate filter list and certificate store
-	log.Println("Applying Opera patches...")
+	fmt.Println(aurora.Green("Applying Opera patches..."))
 	modifyAllowList()
 	generateOperaCertStore()
 
@@ -125,7 +131,7 @@ func main() {
 	output, err := originalWad.GetWAD(wadlib.WADTypeCommon)
 	check(err)
 
-	log.Println("Done! Install ./output/patched.wad, sit back, and enjoy.")
+	fmt.Println(aurora.Green("Done! Install ./output/patched.wad, sit back, and enjoy."))
 	writeOut("patched.wad", output)
 }
 

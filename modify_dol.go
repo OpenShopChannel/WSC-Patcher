@@ -3,7 +3,8 @@ package main
 import (
 	"bytes"
 	"errors"
-	"log"
+	"fmt"
+	"github.com/logrusorgru/aurora/v3"
 )
 
 var (
@@ -35,7 +36,7 @@ type PatchSet []Patch
 func applyPatch(patch Patch) error {
 	// Print name if present
 	if patch.Name != "" {
-		log.Println("Applying patch " + patch.Name)
+		fmt.Println(" + Applying patch", aurora.Cyan(patch.Name))
 	}
 
 	// Ensure consistency
@@ -63,7 +64,7 @@ func applyPatch(patch Patch) error {
 
 // applyPatchSet iterates through all possible patches, noting their name.
 func applyPatchSet(setName string, set PatchSet) {
-	log.Printf("Handling patch set \"%s\":", setName)
+	fmt.Printf("Handling patch set \"%s\":\n", aurora.Yellow(setName))
 
 	for _, patch := range set {
 		err := applyPatch(patch)

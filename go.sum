@@ -1,3 +1,5 @@
+github.com/logrusorgru/aurora/v3 v3.0.0 h1:R6zcoZZbvVcGMvDCKo45A9U/lzYyzl5NfYIvznmDfE4=
+github.com/logrusorgru/aurora/v3 v3.0.0/go.mod h1:vsR12bk5grlLvLXAYrBsb5Oc/N+LxAlxggSjiwMnCUc=
 github.com/wii-tools/GoNUSD v0.2.1 h1:HW8vssrEiCdFjiugCx3cTTaPw9nlz1TWxzeCqXKqTnQ=
 github.com/wii-tools/GoNUSD v0.2.1/go.mod h1:jMYMU5X81Hp0R+bq6/0AxAOijGHXfexaG6dLRilgS2s=
 github.com/wii-tools/arclib v1.0.0 h1:OAmbL3NDUmlR0wa1VpJhxnKiIRFZz1CC40lTVPUm8Ms=
