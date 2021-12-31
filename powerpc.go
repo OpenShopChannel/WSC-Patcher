@@ -85,3 +85,20 @@ func NOP() Instruction {
 func CMPWI(rA Register, value uint16) Instruction {
 	return EncodeInstrDForm(11, 0, rA, value)
 }
+
+// MTSPR is a hack, hardcoding LR, r0.
+// TODO(spotlightishere): actually encode this
+func MTSPR() Instruction {
+	return [4]byte{0x7c, 0x08, 0x03, 0xa6}
+}
+
+// MFSPR is a hack, hardcoding r0, LR.
+// TODO(spotlightishere): actually encode this
+func MFSPR() Instruction {
+	return [4]byte{0x7c, 0x08, 0x02, 0xa6}
+}
+
+// STWU represents the stwu PowerPC instruction.
+func STWU(rS Register, rA Register, offset uint16) Instruction {
+	return EncodeInstrDForm(37, rS, rA, offset)
+}

@@ -110,8 +110,7 @@ var OverwriteIOSPatch = PatchSet{
 		// We inject in the epilog of the function.
 		Before: Instructions{
 			LWZ(R0, 0x14, R1),
-			// mtspr LR, r0
-			Instruction{0x7C, 0x08, 0x03, 0xA6},
+			MTSPR(),
 			ADDI(R1, R1, 0x10),
 			BLR(),
 			padding,
@@ -120,8 +119,7 @@ var OverwriteIOSPatch = PatchSet{
 			LWZ(R0, 0x14, R1),
 			// bl overwriteIOSMemory @ 0x80014428
 			Instruction{0x4B, 0xDB, 0xB1, 0x01},
-			// mtspr LR, r0
-			Instruction{0x7C, 0x08, 0x03, 0xA6},
+			MTSPR(),
 			ADDI(R1, R1, 0x10),
 			BLR(),
 		}.toBytes(),

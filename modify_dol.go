@@ -93,4 +93,5 @@ func applyDefaultPatches() {
 	applyPatchSet("Overwrite IOS Syscall for ES", OverwriteIOSPatch)
 	applyPatchSet("Load Custom CA within IOS", LoadCustomCA())
 	applyPatchSet("Change Base Domain", PatchBaseDomain())
+	applyPatchSet("Negate EC Title Check", NegateECTitle)
 }
