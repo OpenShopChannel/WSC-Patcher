@@ -1,5 +1,15 @@
 package main
 
+// uint24 returns
+func uint24(num uint32) [3]byte {
+	if num > 0x00FFFFFF {
+		panic("invalid uint24 passed")
+	}
+
+	result := fourByte(num)
+	return [3]byte{result[1], result[2], result[3]}
+}
+
 // Instruction represents a 4-byte PowerPC instruction.
 type Instruction [4]byte
 
@@ -101,4 +111,29 @@ func MFSPR() Instruction {
 // STWU represents the stwu PowerPC instruction.
 func STWU(rS Register, rA Register, offset uint16) Instruction {
 	return EncodeInstrDForm(37, rS, rA, offset)
+}
+
+// calcDestination determines the proper offset from a given
+// calling address and target address.
+func calcDestination(from uint, target uint) [3]byte {
+	// TODO(spotlightishere): Handle negative offsets properly
+	offset := target - from
+
+	// Sign-extend by two bytes
+	calc := uint32(offset >> 2)
+	return uint24(calc)
+}
+
+// BL represents the bl PowerPC instruction.
+// It calculates the offset from the given current address and the given
+// target address, saving the current address in the link register. It then branches.
+func BL(current uint, target uint) Instruction {
+	return EncodeInstrIForm(18, calcDestination(current, target), false, true)
+}
+
+// B represents the b PowerPC instruction.
+// It calculates the offset from the given current address
+// and the given target address, and then branches.
+func B(current uint, target uint) Instruction {
+	return EncodeInstrIForm(18, calcDestination(current, target), false, false)
 }

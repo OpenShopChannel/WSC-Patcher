@@ -54,7 +54,7 @@ func generateTag(tag Tag, tagContents []byte) []byte {
 		byte(tag),
 	}
 	// Tag length
-	contents = append(contents, toLength(len(tagContents))...)
+	contents = append(contents, fourByte(uint32(len(tagContents)))...)
 	// Tag contents
 	contents = append(contents, tagContents...)
 
@@ -120,9 +120,9 @@ func generateOperaCertStore() {
 	file.Write(append(header, caCertTag...))
 }
 
-// toLength returns 4 bytes, suitable for the given length.
-func toLength(value int) []byte {
+// fourByte returns 4 bytes, suitable for the given length.
+func fourByte(value uint32) []byte {
 	holder := make([]byte, 4)
-	binary.BigEndian.PutUint32(holder, uint32(value))
+	binary.BigEndian.PutUint32(holder, value)
 	return holder
 }

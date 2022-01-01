@@ -116,6 +116,42 @@ func EncodeInstrDForm(opcode byte, rT Register, rA Register, value uint16) Instr
 	return Instruction{firstInstr, secondInstr, valByte[0], valByte[1]}
 }
 
+// EncodeInstrIForm handles encoding a given opcode, LI, AA and LK.
+// I-form assumes:
+//   - 6 bits for the opcode
+//   - 24 bits for LI
+//   - 1 bit for absolute (AA)
+//   - 1 bit for should store in link register (LK)
+func EncodeInstrIForm(opcode byte, LI [3]byte, AA bool, LK bool) Instruction {
+	opBits := getBits(opcode)
+	liOne := getBits(LI[0])
+	liTwo := getBits(LI[1])
+	liThree := getBits(LI[2])
+
+	instr := [4]Bits{
+		{
+			// We need the upper six bits for our opcode.
+			opBits[2], opBits[3], opBits[4], opBits[5], opBits[6], opBits[7],
+			// Otherwise, copy LI as-is.
+			liOne[0], liOne[1],
+		},
+		{
+			liOne[2], liOne[3], liOne[4], liOne[5], liOne[6], liOne[7], liTwo[0], liTwo[1],
+		},
+		{
+			liTwo[2], liTwo[3], liTwo[4], liTwo[5], liTwo[6], liTwo[7], liThree[0], liThree[1],
+		},
+		{
+			liThree[2], liThree[3], liThree[4], liThree[5], liThree[6], liThree[7],
+			// Copy AA and LK as-is.
+			AA,
+			LK,
+		},
+	}
+
+	return Instruction{instr[0].getByte(), instr[1].getByte(), instr[2].getByte(), instr[3].getByte()}
+}
+
 // twoByte converts a uint16 to two big-endian bytes.
 func twoByte(passed uint16) [2]byte {
 	result := make([]byte, 2)

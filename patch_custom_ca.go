@@ -36,7 +36,7 @@ func LoadCustomCA() PatchSet {
 				LWZ(R3, 0xac, R28),
 				LWZ(R5, 0xc4, R28),
 				// SSLSetRootCA(ssl_fd, ca_cert, cert_index)
-				Instruction{0x48, 0x01, 0x59, 0x49},
+				BL(0x800acae4, 0x800c242c),
 
 				// Check if successful
 				CMPWI(R3, 0),
@@ -46,7 +46,7 @@ func LoadCustomCA() PatchSet {
 				// Return error -1004 if failed
 				LI(R3, 0xfc14),
 				// b FUNCTION_PROLOG
-				Instruction{0x48, 0x00, 0x00, 0xbc},
+				B(0x800acaf4, 0x800acbb0),
 
 				// ----
 
@@ -56,7 +56,7 @@ func LoadCustomCA() PatchSet {
 				LWZ(R3, 0xac, R28),
 				LWZ(R4, 0xd8, R28),
 				// SSLSetBuiltinRootCA(ssl_fd, cert_index)
-				Instruction{0x48, 0x01, 0x5a, 0x75},
+				BL(0x800acb00, 0x800c2574),
 
 				// Check if successful
 				CMPWI(R3, 0),
@@ -66,7 +66,7 @@ func LoadCustomCA() PatchSet {
 				// Return error -1004 if failed
 				LI(R3, 0xfc14),
 				// b FUNCTION_PROLOG
-				Instruction{0x48, 0x00, 0x00, 0xa0},
+				B(0x800acb10, 0x800acbb0),
 			}.toBytes(),
 			After: Instructions{
 				// Our certificate is present at 0x802e97b8.
@@ -84,7 +84,7 @@ func LoadCustomCA() PatchSet {
 				LWZ(R3, 0xac, R28),
 
 				// SSLSetRootCA(ssl_fd, ca_cert, cert_index)
-				Instruction{0x48, 0x01, 0x59, 0x49},
+				BL(0x800acae4, 0x800c242c),
 
 				// Check for errors
 				CMPWI(R3, 0),
@@ -94,7 +94,7 @@ func LoadCustomCA() PatchSet {
 				// Return error -1004 if failed
 				LI(R3, 0xfc14),
 				// b FUNCTION_PROLOG
-				Instruction{0x48, 0x00, 0x00, 0xbc},
+				B(0x800acaf4, 0x800acbb0),
 
 				// NOP the rest in order to allow execution to continue.
 				NOP(), NOP(), NOP(), NOP(), NOP(), NOP(), NOP(),
