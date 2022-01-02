@@ -8,3 +8,4 @@ It does not attempt to handle things such as client certificates or user passwor
  - [`patch_custom_ca_ios.md`](patch_custom_ca_ios.md): The logistics of inserting our custom CA into IOS as well for EC usage.
  - [`patch_base_domain.md`](patch_base_domain.md): Information about what URLs are present within the main DOL and information about patching them.
  - [`patch_ec_title_check.md`](patch_ec_title_check.md): Information about title checks run by EC, and why they were negated.
+ - [`patch_ec_cfg_path.md`](patch_ec_cfg_path.md): An explanation over why the path of `ec.cfg` is changed.

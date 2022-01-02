@@ -94,4 +94,5 @@ func applyDefaultPatches() {
 	applyPatchSet("Load Custom CA within IOS", LoadCustomCA())
 	applyPatchSet("Change Base Domain", PatchBaseDomain())
 	applyPatchSet("Negate EC Title Check", NegateECTitle)
+	applyPatchSet("Change EC Configuration Path", PatchECCfgPath)
 }
