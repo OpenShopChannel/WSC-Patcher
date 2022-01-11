@@ -35,6 +35,12 @@ func BLR() Instruction {
 	return [4]byte{0x4E, 0x80, 0x00, 0x20}
 }
 
+// CRXOR represents a common use of CRXOR on PowerPC.
+// TODO: actually implement
+func CRXOR() Instruction {
+	return [4]byte{0x4c, 0xc6, 0x31, 0x82}
+}
+
 // ADDI represents the addi PowerPC instruction.
 func ADDI(rT Register, rA Register, value uint16) Instruction {
 	return EncodeInstrDForm(14, rT, rA, value)
@@ -46,6 +52,7 @@ func LI(rT Register, value uint16) Instruction {
 }
 
 // SUBI represents the subi mnemonic on PowerPC.
+// TODO: handle negative values properly?
 func SUBI(rT Register, rA Register, value uint16) Instruction {
 	return ADDI(rT, 0, -value)
 }
