@@ -103,7 +103,7 @@ var OverwriteIOSPatch = PatchSet{
 		Name:     "Insert patch table",
 		AtOffset: 3205088,
 
-		Before: emptyBytes(40),
+		Before: emptyBytes(48),
 		After: []byte{
 			//////////////
 			// PATCH #1 //
@@ -124,6 +124,12 @@ var OverwriteIOSPatch = PatchSet{
 			//    mov r0, #0x0
 			//    bx lr
 			0x20, 0x00, 0x47, 0x70,
+
+			// Not a patch! This is here so we have shorter assembly.
+			// 0xcd8005a0 is the location of LT_CHIPREVID.
+			0xcd, 0x80, 0x05, 0xa0,
+			// We're attempting to compare 0xcafe.
+			0x00, 0x00, 0xca, 0xfe,
 
 			//////////////////////////
 			// PATCH #3 - vWii only //
@@ -149,8 +155,8 @@ var OverwriteIOSPatch = PatchSet{
 			// The original code has a few conditionals preventing system title usage.
 			// 0xe00846c0 is equivalent in ARM THUMB to:
 			//    b +0x8       ; branch past conditionals
-			//    mov r8, r8   ; recommended THUMB nop
-			0xe0, 0x08, 0x46, 0xc0,
+			//    add sp,#0x0  ; recommended THUMB nop
+			0xe0, 0x08, 0xb0, 0x00,
 
 			//////////////////////////
 			// PATCH #5 - vWii only //
@@ -162,8 +168,8 @@ var OverwriteIOSPatch = PatchSet{
 			// We simply branch off past these.
 			// 0xe00c46c0 is equivalent in ARM THUMB to:
 			//    b +0xc       ; branch past conditionals
-			//    mov r8, r8   ; recommended THUMB nop
-			0xe0, 0x0c, 0x46, 0xc0,
+			//    add sp,#0x0  ; recommended THUMB nop
+			0xe0, 0x0c, 0xb0, 0x00,
 		},
 	},
 	Patch{
@@ -187,48 +193,58 @@ var OverwriteIOSPatch = PatchSet{
 			// Load address/value pair for IOSC_VerifyPublicKeySign
 			LWZ(R9, 0x8, R8),
 			LWZ(R10, 0xc, R8),
-
 			// Apply!
 			STW(R10, 0x0, R9),
 
-			// The remainder of our patches will determine if we are on a Wii U.
+			// The remainder of our patches are for a Wii U. We must detect such.
 			// Even in vWii mode, 0x0d8005a0 (LT_CHIPREVID) will have its upper
 			// 16 bits set to 0xCAFE. We can compare against this.
 			// See also: https://wiiubrew.org/wiki/Hardware/Latte_registers
 			// (However, we must access the cached version at 0xcd8005a0.)
-			LIS(R9, 0xcd80),
-			ORI(R9, R9, 0x05a0),
+			LWZ(R9, 0x10, R8),
 			LWZ(R9, 0, R9),
+			// sync 0
+			SYNC(),
 
 			// Shift this value 16 bits to the right
 			// in order to compare its higher value.
-			// srawi r9, r9, 16
-			Instruction{0x7d, 0x29, 0x86, 0x70},
-			CMPWI(R9, 0xCAFE),
-			// If we're not a Wii U, carry on until the end.
-			// bne (last blr)
-			ORI(R0, R0, 0),
-			//Instruction{0x40, 0x82, 0x00, 0x28},
+			// rlwinm r9, r9, 0x10, 0x10, 0x1f
+			Instruction{0x55, 0x29, 0x84, 0x3e},
 
-			// Apply ES_AddTicket
-			LWZ(R9, 0x10, R8),
+			// Load 0xcafe, our comparison value
 			LWZ(R10, 0x14, R8),
-			STW(R10, 0x0, R9),
+
+			// Compare!
+			// cmpw r9, r10
+			Instruction{0x7c, 0x09, 0x50, 0x00},
+
+			// If we're not a Wii U, carry on until the end.
+			//bne (last blr)
+			Instruction{0x40, 0x82, 0x00, 0x30},
 
 			// Apply ES_AddTicket
 			LWZ(R9, 0x18, R8),
 			LWZ(R10, 0x1c, R8),
 			STW(R10, 0x0, R9),
+			EIEIO(),
 
-			// Apply ES_AddTicket
+			// Apply ES_AddTitleStart
 			LWZ(R9, 0x20, R8),
 			LWZ(R10, 0x24, R8),
 			STW(R10, 0x0, R9),
+			EIEIO(),
+
+			// Apply ES_AddContentStart
+			//LWZ(R9, 0x28, R8),
+			//LWZ(R10, 0x2c, R8),
+			//STW(R10, 0x0, R9),
+			//EIEIO(),
+
+			// TODO: FILL
+			BLR(), BLR(), BLR(),
 
 			// We're finished patching!
 			BLR(),
-
-			BLR(), BLR(), BLR(),
 		}.toBytes(),
 	},
 	Patch{

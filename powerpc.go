@@ -103,6 +103,12 @@ func CMPWI(rA Register, value uint16) Instruction {
 	return EncodeInstrDForm(11, 0, rA, value)
 }
 
+// SYNC is a hack, hardcoding sync 0.
+// TODO(spotlightishere): actually encode this
+func SYNC() Instruction {
+	return [4]byte{0x7c, 0x00, 0x04, 0xac}
+}
+
 // MTSPR is a hack, hardcoding LR, r0.
 // TODO(spotlightishere): actually encode this
 func MTSPR() Instruction {
