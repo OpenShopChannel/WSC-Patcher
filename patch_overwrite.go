@@ -195,6 +195,7 @@ var OverwriteIOSPatch = PatchSet{
 			LWZ(R10, 0xc, R8),
 			// Apply!
 			STW(R10, 0x0, R9),
+			EIEIO(),
 
 			// The remainder of our patches are for a Wii U. We must detect such.
 			// Even in vWii mode, 0x0d8005a0 (LT_CHIPREVID) will have its upper
@@ -219,53 +220,53 @@ var OverwriteIOSPatch = PatchSet{
 			Instruction{0x7c, 0x09, 0x50, 0x00},
 
 			// If we're not a Wii U, carry on until the end.
-			//bne (last blr)
+			// bne (last blr)
 			Instruction{0x40, 0x82, 0x00, 0x30},
 
 			// Apply ES_AddTicket
 			LWZ(R9, 0x18, R8),
 			LWZ(R10, 0x1c, R8),
-			STW(R10, 0x0, R9),
-			EIEIO(),
-
-			// Apply ES_AddTitleStart
-			LWZ(R9, 0x20, R8),
-			LWZ(R10, 0x24, R8),
-			STW(R10, 0x0, R9),
-			EIEIO(),
-
-			// Apply ES_AddContentStart
-			//LWZ(R9, 0x28, R8),
-			//LWZ(R10, 0x2c, R8),
+			SYNC(),
 			//STW(R10, 0x0, R9),
 			//EIEIO(),
 
-			// TODO: FILL
+			//// Apply ES_AddTitleStart
+			//LWZ(R9, 0x20, R8),
+			//LWZ(R10, 0x24, R8),
+			//STW(R10, 0x0, R9),
+			//
+			//// Apply ES_AddContentStart
+			//LWZ(R9, 0x28, R8),
+			//LWZ(R10, 0x2c, R8),
+			//STW(R10, 0x0, R9),
+
 			BLR(), BLR(), BLR(),
+			BLR(), BLR(), BLR(),
+			BLR(),
 
 			// We're finished patching!
 			BLR(),
 		}.toBytes(),
 	},
 	Patch{
-		Name:     "Modify ES_InitLib",
-		AtOffset: 2399844,
+		Name:     "Modify main",
+		AtOffset: 688,
 
-		// We inject in the epilog of the function.
+		// We inject the tail end of the function.
 		Before: Instructions{
-			LWZ(R0, 0x14, R1),
-			MTSPR(),
-			ADDI(R1, R1, 0x10),
-			BLR(),
+			// bl main
+			BL(0x800041b0, 0x80023df0),
+			// b exit
+			B(0x800041b4, 0x801d0960),
 			padding,
 		}.toBytes(),
 		After: Instructions{
-			LWZ(R0, 0x14, R1),
-			// bl overwriteIOSMemory @ 0x80014428
-			Instruction{0x4b, 0xdb, 0xb0, 0xcd},
-			MTSPR(),
-			ADDI(R1, R1, 0x10),
-			BLR(),
+			// bl overwriteIOSMemory
+			BL(0x800041b0, 0x800143f4),
+			// bl main
+			BL(0x800041b4, 0x80023df0),
+			// b exit
+			B(0x800041b8, 0x801d0960),
 		}.toBytes(),
 	},
 }
