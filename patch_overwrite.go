@@ -136,8 +136,8 @@ var OverwriteIOSPatch = PatchSet{
 			//////////////////////////
 			// Patch location:
 			// We want to write at 0x20102100, aka "ES_AddTicket".
-			// (To us, this is mapped at 0x939f2100.)
-			0x93, 0x9f, 0x21, 0x00,
+			// (0x20102100 | 0xc0000000) -> 0xe0102100
+			0xe0, 0x10, 0x21, 0x00,
 			// The original code has a few conditionals preventing system title usage.
 			// We simply branch off past these.
 			// 0x681a2a01 is equivalent in ARM THUMB to:
@@ -150,8 +150,8 @@ var OverwriteIOSPatch = PatchSet{
 			// PATCH #4 - vWii only //
 			//////////////////////////
 			// We want to write to 0x20103240, aka "ES_AddTitleStart".
-			// (For us, this is 0x939f3240.)
-			0x93, 0x9f, 0x32, 0x40,
+			// (0x20103240 | 0xc0000000) -> 0xe0103240
+			0xe0, 0x10, 0x32, 0x40,
 			// The original code has a few conditionals preventing system title usage.
 			// 0xe00846c0 is equivalent in ARM THUMB to:
 			//    b +0x8       ; branch past conditionals
@@ -162,8 +162,8 @@ var OverwriteIOSPatch = PatchSet{
 			// PATCH #5 - vWii only //
 			//////////////////////////
 			// Lastly, we want to write to 0x20103564, aka "ES_AddContentStart".
-			// (We utilize memory cache and write at 0x939f3564.)
-			0x93, 0x9f, 0x35, 0x64,
+			// (0x20103564 | 0xc0000000) -> 0xe0103564
+			0xe0, 0x10, 0x35, 0x64,
 			// The original code has a few conditionals preventing system title usage.
 			// We simply branch off past these.
 			// 0xe00c46c0 is equivalent in ARM THUMB to:
@@ -195,7 +195,6 @@ var OverwriteIOSPatch = PatchSet{
 			LWZ(R10, 0xc, R8),
 			// Apply!
 			STW(R10, 0x0, R9),
-			EIEIO(),
 
 			// The remainder of our patches are for a Wii U. We must detect such.
 			// Even in vWii mode, 0x0d8005a0 (LT_CHIPREVID) will have its upper
@@ -226,22 +225,19 @@ var OverwriteIOSPatch = PatchSet{
 			// Apply ES_AddTicket
 			LWZ(R9, 0x18, R8),
 			LWZ(R10, 0x1c, R8),
-			SYNC(),
-			//STW(R10, 0x0, R9),
-			//EIEIO(),
+			STW(R10, 0x0, R9),
 
-			//// Apply ES_AddTitleStart
-			//LWZ(R9, 0x20, R8),
-			//LWZ(R10, 0x24, R8),
-			//STW(R10, 0x0, R9),
-			//
-			//// Apply ES_AddContentStart
-			//LWZ(R9, 0x28, R8),
-			//LWZ(R10, 0x2c, R8),
-			//STW(R10, 0x0, R9),
+			// Apply ES_AddTitleStart
+			LWZ(R9, 0x20, R8),
+			LWZ(R10, 0x24, R8),
+			STW(R10, 0x0, R9),
 
-			BLR(), BLR(), BLR(),
-			BLR(), BLR(), BLR(),
+			// Apply ES_AddContentStart
+			LWZ(R9, 0x28, R8),
+			LWZ(R10, 0x2c, R8),
+			STW(R10, 0x0, R9),
+
+			EIEIO(),
 			BLR(),
 
 			// We're finished patching!
@@ -249,24 +245,25 @@ var OverwriteIOSPatch = PatchSet{
 		}.toBytes(),
 	},
 	Patch{
-		Name:     "Modify main",
-		AtOffset: 688,
-
-		// We inject the tail end of the function.
+		Name:     "Do not require input for exception handler",
+		AtOffset: 32032,
 		Before: Instructions{
-			// bl main
-			BL(0x800041b0, 0x80023df0),
-			// b exit
-			B(0x800041b4, 0x801d0960),
-			padding,
+			STWU(R1, R1, 0xFC10),
 		}.toBytes(),
 		After: Instructions{
-			// bl overwriteIOSMemory
-			BL(0x800041b0, 0x800143f4),
-			// bl main
-			BL(0x800041b4, 0x80023df0),
-			// b exit
-			B(0x800041b8, 0x801d0960),
+			BLR(),
+		}.toBytes(),
+	},
+	Patch{
+		Name:     "Modify ipl::scene::Setting::prepare",
+		AtOffset: 127640,
+
+		Before: Instructions{
+			BLR(),
+		}.toBytes(),
+		After: Instructions{
+			// b overwriteIOSMemory
+			Instruction{0x4b, 0xfe, 0x5c, 0x9c},
 		}.toBytes(),
 	},
 }
