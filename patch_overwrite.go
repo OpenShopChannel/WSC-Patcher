@@ -103,7 +103,7 @@ var OverwriteIOSPatch = PatchSet{
 		Name:     "Insert patch table",
 		AtOffset: 3205088,
 
-		Before: emptyBytes(48),
+		Before: emptyBytes(52),
 		After: []byte{
 			//////////////
 			// PATCH #1 //
@@ -118,8 +118,8 @@ var OverwriteIOSPatch = PatchSet{
 			// PATCH #2 //
 			//////////////
 			// We want to write to IOSC_VerifyPublicKeySign at 0x13a73ad4.
-			// For us, this is mapped to 0xd3a73ad4.
-			0xd3, 0xa7, 0x3a, 0xd4,
+			// For us, this is mapped to 0x92a73ad4.
+			0x92, 0xa7, 0x3a, 0xd4,
 			// 0x20004770 is equivalent in ARM THUMB to:
 			//    mov r0, #0x0
 			//    bx lr
@@ -136,22 +136,22 @@ var OverwriteIOSPatch = PatchSet{
 			//////////////////////////
 			// Patch location:
 			// We want to write at 0x20102100, aka "ES_AddTicket".
-			// (0x20102100 | 0xc0000000) -> 0xe0102100
-			0xe0, 0x10, 0x21, 0x00,
+			// We use the address mapped to PowerPC.
+			0x93, 0x9f, 0x21, 0x00,
 			// The original code has a few conditionals preventing system title usage.
 			// We simply branch off past these.
-			// 0x681a2a01 is equivalent in ARM THUMB to:
+			// 0x681ae008 is equivalent in ARM THUMB to:
 			//    ldr r2,[r3,#0x0]     ; original code we wish to preserve
 			//                         ; so we can write 32 bits
 			//    b +0x14              ; branch past conditionals
-			0x68, 0x1a, 0x2a, 0x01,
+			0x68, 0x1a, 0xe0, 0x08,
 
 			//////////////////////////
 			// PATCH #4 - vWii only //
 			//////////////////////////
 			// We want to write to 0x20103240, aka "ES_AddTitleStart".
-			// (0x20103240 | 0xc0000000) -> 0xe0103240
-			0xe0, 0x10, 0x32, 0x40,
+			// We use the address mapped to PowerPC.
+			0x93, 0x9f, 0x32, 0x40,
 			// The original code has a few conditionals preventing system title usage.
 			// 0xe00846c0 is equivalent in ARM THUMB to:
 			//    b +0x8       ; branch past conditionals
@@ -162,14 +162,18 @@ var OverwriteIOSPatch = PatchSet{
 			// PATCH #5 - vWii only //
 			//////////////////////////
 			// Lastly, we want to write to 0x20103564, aka "ES_AddContentStart".
-			// (0x20103564 | 0xc0000000) -> 0xe0103564
-			0xe0, 0x10, 0x35, 0x64,
+			// We use the address mapped to PowerPC.
+			0x93, 0x9f, 0x35, 0x64,
 			// The original code has a few conditionals preventing system title usage.
 			// We simply branch off past these.
 			// 0xe00c46c0 is equivalent in ARM THUMB to:
 			//    b +0xc       ; branch past conditionals
 			//    add sp,#0x0  ; recommended THUMB nop
 			0xe0, 0x0c, 0xb0, 0x00,
+
+			// This is additionally not a patch!
+			// We use this to store our ideal MEM2 mapping.
+			0x90, 0x00, 0x1f, 0xff,
 		},
 	},
 	Patch{
@@ -222,6 +226,11 @@ var OverwriteIOSPatch = PatchSet{
 			// bne (last blr)
 			Instruction{0x40, 0x82, 0x00, 0x30},
 
+			// Load a better mapping for upper MEM2.
+			LWZ(R9, 0x30, R8),
+			// mtspr DBAT7U, r9
+			Instruction{0x7d, 0x3e, 0x8b, 0xa6},
+
 			// Apply ES_AddTicket
 			LWZ(R9, 0x18, R8),
 			LWZ(R10, 0x1c, R8),
@@ -236,9 +245,6 @@ var OverwriteIOSPatch = PatchSet{
 			LWZ(R9, 0x28, R8),
 			LWZ(R10, 0x2c, R8),
 			STW(R10, 0x0, R9),
-
-			EIEIO(),
-			BLR(),
 
 			// We're finished patching!
 			BLR(),
@@ -255,15 +261,15 @@ var OverwriteIOSPatch = PatchSet{
 		}.toBytes(),
 	},
 	Patch{
-		Name:     "Modify ipl::scene::Setting::prepare",
-		AtOffset: 127640,
+		Name:     "Modify ipl::Exception::__ct",
+		AtOffset: 31904,
 
 		Before: Instructions{
 			BLR(),
 		}.toBytes(),
 		After: Instructions{
 			// b overwriteIOSMemory
-			Instruction{0x4b, 0xfe, 0x5c, 0x9c},
+			Instruction{0x42, 0x80, 0xd2, 0x94},
 		}.toBytes(),
 	},
 }
