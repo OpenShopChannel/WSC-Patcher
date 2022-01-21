@@ -229,7 +229,7 @@ var OverwriteIOSPatch = PatchSet{
 
 			// If we're not a Wii U, carry on until the end.
 			// bne (last blr)
-			Instruction{0x40, 0x82, 0x00, 0x30},
+			Instruction{0x40, 0x82, 0x00, 0x28},
 
 			// Apply ES_AddTicket
 			LWZ(R9, 0x18, R8),
