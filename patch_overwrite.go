@@ -119,7 +119,7 @@ var OverwriteIOSPatch = PatchSet{
 			//////////////
 			// We want to write to IOSC_VerifyPublicKeySign at 0x13a73ad4.
 			// For us, this is mapped to 0x92a73ad4.
-			0x92, 0xa7, 0x3a, 0xd4,
+			0x93, 0xa7, 0x3a, 0xd4,
 			// 0x20004770 is equivalent in ARM THUMB to:
 			//    mov r0, #0x0
 			//    bx lr
@@ -173,7 +173,7 @@ var OverwriteIOSPatch = PatchSet{
 
 			// This is additionally not a patch!
 			// We use this to store our ideal MEM2 mapping.
-			0x90, 0x00, 0x1f, 0xff,
+			0x93, 0x00, 0x01, 0xff,
 		},
 	},
 	Patch{
@@ -193,6 +193,11 @@ var OverwriteIOSPatch = PatchSet{
 			LWZ(R10, 0x4, R8),
 			// Apply lower half
 			STH(R10, 0x0, R9),
+
+			// Load a better mapping for upper MEM2.
+			LWZ(R9, 0x30, R8),
+			// mtspr DBAT7U, r9
+			Instruction{0x7d, 0x3e, 0x8b, 0xa6},
 
 			// Load address/value pair for IOSC_VerifyPublicKeySign
 			LWZ(R9, 0x8, R8),
@@ -225,11 +230,6 @@ var OverwriteIOSPatch = PatchSet{
 			// If we're not a Wii U, carry on until the end.
 			// bne (last blr)
 			Instruction{0x40, 0x82, 0x00, 0x30},
-
-			// Load a better mapping for upper MEM2.
-			LWZ(R9, 0x30, R8),
-			// mtspr DBAT7U, r9
-			Instruction{0x7d, 0x3e, 0x8b, 0xa6},
 
 			// Apply ES_AddTicket
 			LWZ(R9, 0x18, R8),
