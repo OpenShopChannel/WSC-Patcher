@@ -9,16 +9,22 @@ When EC finishes downloading a title, it calls [ES](https://wiibrew.org/wiki//de
 Along the process, the WAD's certificate is verified, and content signatures are verified.
 This is done via `IOSC_VerifyPublicKeySign`, an [IOS syscall](https://wiibrew.org/wiki/IOS/Syscalls) available for ES.
 
-As we are not Nintendo and lack their private key, we cannot sign officially, and fail all checks.
+As we are not Nintendo and lack their private key, we cannot sign officially, and fail all checks. This is not ideal.
+
+Additionally, on a vWii, ES ensures that titles installed are not in group `00000001` (titles such as IOS),
+`00010002` (system titles, such as the Wii Shop Channel itself), or `00010008` (hidden titles).
+If such titles are installed, ES returns -1017.
+As we heavily utilize hidden titles for Homebrew title delivery, this is likewise not ideal.
+
 We need to bypass this.
 
 ## Explanation
-It was determined that the best solution was to overwrite `IOSC_VerifyPublicKeySign` itself.
+For the first issue, it was determined that the best solution was to overwrite `IOSC_VerifyPublicKeySign` itself.
 
 The Wii Shop Channel uses IOS 56. Across a Wii and a vWii, analysis of the IOSP module (roughly its primary kernel)
 shows that the `IOSC_VerifyPublicKeySign` syscall has its function present at `0x13a73ad4` within MEM2. (Dolphin silently ignores this write.)
 
-The function - in ARM THUMB mode - looks similar to the following (as copied from Ghidra):
+The function - in ARM Thumb mode - looks similar to the following (as copied from Ghidra):
 ```
                      **************************************************************
                      *                                                            *
@@ -56,8 +62,24 @@ Therefore, we are able to simply return `IOS_SUCCESS` (or 0) to negate the entir
 13a73ad6 47 70           bx         lr
 ```
 
+This leaves us with the challenge of writing 4 bytes - `20 00 47 70` - to `0x13a73ad4` as identified previously.
 
-This leaves us with the challenge of writing 4 bytes - `20 00 47 70` - to `0xd3a73ad4` as identified previously.
+We next investigate patches needed for a vWii. In pseudocode, Nintendo's check is similar to this:
+```c
+if (((title_upper == 0x00000001) || (title_upper == 0x00010002)) || (title_upper == 0x00010008)) {
+  return -1017;
+}
+```
+In assembly, this often results in three conditionals, all branching to returning an error code on failure, or continuing on.
+
+It was determined that three functions have this logic:
+ - `ES_AddTicket` at `0x20102102`
+ - `ES_AddTitleStart` at `0x20103240`
+ - `ES_AddContentStart` at `0x20103564`
+
+ The easiest patch for them is to simply `b`ranch over these conditionals. As mentioned previously, each instruction in Thumb is two bytes. We therefore write a branch over the conditional immediately followed by a `nop` in order to write 4 bytes.
+
+ However, for alignment purposes, we choose to write at `0x20102100` for `ES_AddTicket`, having our 4 bytes consist of the original instruction previously and then our branch.
 
 ## Execution
 Ideally, we would not rely on a hardcoded address for this patch, and would instead choose to iterate through memory.
@@ -85,72 +107,62 @@ immediately `blr` - returning with no other logic:
 
 An unrelated function resides at `0x80014460`, so we cannot continue. However, we do not need to.
 
-We consolidate these four functions into a single function at `0x80014420` - our own `textinput::EventObserver::doNothing`, if you will.
-We must additionally update references to this single at two separate virtual tables:
+We consolidate these four functions into a single function at `0x800143f0` - our own `textinput::EventObserver::doNothing`, if you will. 
+
+We then find three related functions before our other vtable members:
+ - At `0x800143f0`, `textinput::EventObserver::onOutOfLength` - printing `OutOfLength!`
+ - At `0x800143F4`, `textinput::EventObserver::onCancel` - printing `Cancel!`
+ - At `0x800143F8`, `textinput::EventObserver::onOK` - printing `OK!`
+
+It was determined that these functions are never called, as their logic is overridden elsewhere. Additionally, the output from OSReport falls nowhere on production systems by default. We coalsce them into the aforementioned `doNothing`.
+
+We shift the `blr` up from `0x80014420` in order to permit space for our patching function.
+This all requires us to update references to this single function at two separate virtual tables:
   - `textinput::EventObserver` at `0x802f7a9`
   - `ipl::keyboard::EventObserver` at `0x802f8418`
 
 ---
+
+Going forward, we need to permit writing our patches. While apparently unnecessary on a physical Wii, a vWii is quite persistent on what memory ranges we are permitted to access.
+
+For reference purposes, the PowerPC provides a set of "block address translation" (hereforth known as BAT) registers. This permits the processor to map physical memory to another location with parameters such as size and access controls. Per table 7-8, "Upper BAT Register Block Size Mask Encodings" in *PowerPC Microprocessor Family: The Programming Environments, Rev 0.1*, we learn that bits 19 to 29 specify the range mapped (referred to as the block length, or BL).
+
+After observation, it was determined Nintendo sets these relevant BAT layouts by default in both the Wii's and vWii's NANDLoader:
+ - `DBAT4`, mapping an unknown lower (likely `0x10000000`) with upper `0x900003ff`.
+ - `DBAT6`, mapping `0x12000000` to `0x920001ff`.
+ - `DBAT7`, mapping `0x13000000` to `0x930000ff`.
+
+Only 8 bits are set for `DBAT7U`, providing us with only 8 Mb of range (`0x93000000` to `0x93800000`).
+
+IOS' executable code resides in the higher range of MEM2 (for our purposes, `0x939f0000` to `0x93a80000`), falling out of our accessible range.
+
+We must DBAT7U to contain `0x930001ff`, allowing us 16 Mb - from `0x93000000` to `0x94000000`, technically. We do not exceed `0x93a80000` for our purposes.
+
+---
 Next, we need to devise a way to have the channel overwrite IOS memory.
 
-We have carved out our own space at `0x80014428` to put a function.
+We have carved out our own space at `0x800143f0` to put a function.
 Thankfully, the operation is fairly simple:
- - Write to [`MEM_PROT`](https://wiibrew.org/wiki/Hardware/Hollywood_Registers) and disable it. It is on by default.
+ - Write `2` to [`MEM_PROT`](https://wiibrew.org/wiki/Hardware/Hollywood_Registers) and disable it. It is on by default.
    - We use `0xcd8b420a` instead of `0x0d8b420a` as that appears to be where it is mapped for us.
-   - Dolphin appears to silently ignore this MMIO access. One day, we may want to not apply the patch should we be able to open `/dev/dolphin`.
+   - Dolphin appears to silently ignore this MMIO access. One day, we may want to not apply any patches should we be able to open `/dev/dolphin`.
+ - Set `DBAT7U` to `0x930001ff` so that we may match.
  - Write `20 00 47 70` as described above to `0x13a73ad4` to negate `IOSC_VerifyPublicKeySign`.
-   - Again, we must actually use `0xd3a73ad4` due to mapping.
+   - Again, we must actually use `0x93a73ad4` due to mapping.
    - Dolphin once again appears to ignore this, thankfully.
- - Clear cache
-   - TODO: Is this actually functional?
+ - Read `0x0d8005a0` and shift it 16 bits in order to determine what console were running on. Per [WiiUBrew](https://wiiubrew.org/wiki/Hardware/Latte_registers), this is `0xcafe`, even in vWii mode.
+ - Compare `0xcafe` to our read value. If it is not, we cease patching. Otherwise, we continue.
+ - Write our vWii EC patches.
+   - These are all branches over.
 
-We write and apply the following PowerPC assembly to achieve this task:
-```asm
-overwriteIOSPatch:
-  ; Load 0x0d8b420a, location of MEM_PROT, to r9.
-  lis r9, 0xcd8b
-  ori r9, r9, 0x420a
-  ; We wish to write 0x2 in order to disable.
-  li r10, 0x2
+In order to fully utilize space, we utilize another empty spot on in the binary - a "patch table", if you will. Results are read off one register for brevity.
 
-  ; And... write!
-  sth r10, 0x0(r9)
-  eieio
-    
-  ; Load 0xd3a73ad4, location of of IOSC_VerifyPublicKeySig, to r9.
-  lis r9, 0xd3a7
-  ori r9, r9, 0x73ad4
-  ; 0x20004770 represents our actual patch.
-  lis r10, 0x2000
-  ori r10, r10, 0x4770
-
-  ; And... write.
-  stw r10, 0x0(r9)
-
-  ; Clear cache
-  dcbi 0, r10
-  blr
-```
+Please find the full source of this patch under "Insert overwriteIOSMemory" within `patch_overwrite.go`. It is too long to include in full, but is commented.
 
 ---
 Finally, we need to determine the best way to call our custom patching function.
-Using the aforementioned symbols we find `ES_InitLib`, called once during initialization to open a handle with `/dev/es`.
+While debugging issues earlier with memory - throwing DSI exceptions - it was discovered that the Wii Shop Channel has a rudimentary exception handler built in, much like that of [Mario Kart Wii](https://youtu.be/p6RLSFQeeRM?t=130) or [New Super Mario Bros. Wii](https://youtu.be/fnRdSmbOvkw?t=81). It is likely that these are the same implementation, using Nintendo's in-house IPL library (potentially EGG?).
 
-We insert a call to our function in its epilog, immediately before loading the previous LR from stack and branching back.
-This makes its flow roughly the following pseudocode:
-```c
-int ES_InitLib() {
-  int fd = 0;
-  if (ES_HANDLE < 0) {
-    ES_HANDLE = IOS_Open("/dev/es", 0);
-    if (ES_HANDLE < 0) {
-      fd = ES_HANDLE;
-    }
-  }
-  
-  // Our custom code
-  overwriteIOSMemory();
-  
-  return fd;
-}
-```
+As we wish to show the user that we have crashed, we apply our patch within the epilog of constructor, replacing its `blr` with a simple `b`ranch and utilizing our own. Should our patches crash, we are assured that the handler is registered to catch them.
+
+It was additionally determined that, quite similar to that of MKW or NSMBW, a combination is required to access the handler upon crash. It was thought that the code (on a Wii Remote) would be 2, B, B, Right, Plus, Left, Minus, B; however, this appears to be incorrect. Instead of spending engineering effort to determine the correct code, the check for a combination was simply removed.
