@@ -37,8 +37,8 @@ Invoke WSC-Patcher similar to the following:
 ```
 
 Throughout its operation, the patcher will perform the following:
- - Version 20 (latest, as of writing) of the Wii Shop Channel will be downloaded to `cache/original.wad`.
- - If `output/root.cer` is not present, a 1024-bit (RSA), SHA-1 CA certificate will be generated.
+ - Version 21 (latest, as of writing) of the Wii Shop Channel will be downloaded to `cache/original.wad`.
+ - If `output/root.cer` is not present, a 2048-bit (RSA), SHA-1 CA certificate will be generated.
    - At the same time, `*.<basedomain>` will be issued for ease of use. See `output/server.pem` and `output/server.key` for usage with nginx or similar servers.
  - Modifications are made to the application's main `.arc` (within content index 2) to permit Opera loading the base domain, and the customized certificates.
  - Patches to the application's main dol are also performed. Please see `docs/patch_<name>.md` for more information on what these contain.
