@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+// YearIssueTime is an issuance of this year's date on January 1 at midnight.
+var YearIssueTime = time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, time.UTC)
+
 // generateSerial generates a random serial number for our issued certificates.
 // It is taken from golang std: src/crypto/tls/generate_cert.go
 // Direct permalink on GitHub: https://git.io/JyyDw
@@ -25,14 +28,14 @@ func createCertificates() []byte {
 	////////////////////////////////////
 	//        Generate root CA        //
 	////////////////////////////////////
-	rootCAFormat := x509.Certificate{
+	rootCert := &x509.Certificate{
 		SignatureAlgorithm: x509.SHA1WithRSA,
 		SerialNumber:       generateSerial(),
 		Subject: pkix.Name{
 			CommonName: "Open Shop Channel CA",
 		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(10, 0, 0),
+		NotBefore:             YearIssueTime,
+		NotAfter:              YearIssueTime.AddDate(10, 0, 0),
 		KeyUsage:              x509.KeyUsageCertSign,
 		BasicConstraintsValid: true,
 		IsCA:                  true,
@@ -41,13 +44,13 @@ func createCertificates() []byte {
 	rootPriv, err := rsa.GenerateKey(rand.Reader, 2048)
 	check(err)
 
-	rootCert, err := x509.CreateCertificate(rand.Reader, &rootCAFormat, &rootCAFormat, &rootPriv.PublicKey, rootPriv)
+	rootPublic, err := x509.CreateCertificate(rand.Reader, rootCert, rootCert, &rootPriv.PublicKey, rootPriv)
 	check(err)
 
 	////////////////////////////////////
 	//  Issue server TLS certificate  //
 	////////////////////////////////////
-	serverCertFormat := x509.Certificate{
+	serverCert := x509.Certificate{
 		SignatureAlgorithm: x509.SHA1WithRSA,
 		SerialNumber:       generateSerial(),
 		// We'll issue with a primary common name for our base domain.
@@ -58,8 +61,8 @@ func createCertificates() []byte {
 		DNSNames: []string{
 			"*." + baseDomain,
 		},
-		NotBefore:      time.Now(),
-		NotAfter:       time.Now().AddDate(10, 0, 0),
+		NotBefore:      YearIssueTime,
+		NotAfter:       YearIssueTime.AddDate(10, 0, 0),
 		KeyUsage:       x509.KeyUsageKeyAgreement | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:    []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		IsCA:           false,
@@ -69,24 +72,24 @@ func createCertificates() []byte {
 	serverPriv, err := rsa.GenerateKey(rand.Reader, 2048)
 	check(err)
 
-	serverCert, err := x509.CreateCertificate(rand.Reader, &serverCertFormat, &rootCAFormat, &serverPriv.PublicKey, rootPriv)
+	serverPublic, err := x509.CreateCertificate(rand.Reader, &serverCert, rootCert, &serverPriv.PublicKey, rootPriv)
 	check(err)
 
 	////////////////////////////
 	//  Persist certificates  //
 	////////////////////////////
-	rootCertPem := pemEncode("CERTIFICATE", rootCert)
+	rootCertPem := pemEncode("CERTIFICATE", rootPublic)
 	rootKeyPem := pemEncode("RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(rootPriv))
-	serverCertPem := pemEncode("CERTIFICATE", serverCert)
+	serverCertPem := pemEncode("CERTIFICATE", serverPublic)
 	serverKeyPem := pemEncode("RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(serverPriv))
 
 	writeOut("root.pem", rootCertPem)
-	writeOut("root.cer", rootCert)
+	writeOut("root.cer", rootPublic)
 	writeOut("root.key", rootKeyPem)
 	writeOut("server.pem", serverCertPem)
 	writeOut("server.key", serverKeyPem)
 
-	return rootCert
+	return rootPublic
 }
 
 func pemEncode(typeName string, bytes []byte) []byte {
