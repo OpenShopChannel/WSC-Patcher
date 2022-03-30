@@ -50,23 +50,24 @@ func createCertificates() []byte {
 	////////////////////////////////////
 	//  Issue server TLS certificate  //
 	////////////////////////////////////
+	// We'll issue a wildcard for our CN and SANs.
+	// Is this recommended? Absolutely not, but who's to stop us?
+	issueName := "*." + baseDomain
 	serverCert := x509.Certificate{
 		SignatureAlgorithm: x509.SHA1WithRSA,
 		SerialNumber:       generateSerial(),
-		// We'll issue with a primary common name for our base domain.
 		Subject: pkix.Name{
-			CommonName: baseDomain,
+			CommonName: issueName,
 		},
-		// The SAN will be a wildcard for our base domain, as it cannot be the CN.
 		DNSNames: []string{
-			"*." + baseDomain,
+			issueName,
 		},
-		NotBefore:      YearIssueTime,
-		NotAfter:       YearIssueTime.AddDate(10, 0, 0),
-		KeyUsage:       x509.KeyUsageKeyAgreement | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:    []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		IsCA:           false,
-		MaxPathLenZero: true,
+		NotBefore:             YearIssueTime,
+		NotAfter:              YearIssueTime.AddDate(10, 0, 0),
+		KeyUsage:              x509.KeyUsageKeyAgreement | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		IsCA:                  false,
 	}
 
 	serverPriv, err := rsa.GenerateKey(rand.Reader, 2048)
