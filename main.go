@@ -6,6 +6,7 @@ import (
 	"github.com/logrusorgru/aurora/v3"
 	"github.com/wii-tools/GoNUSD"
 	"github.com/wii-tools/arclib"
+	"github.com/wii-tools/powerpc"
 	"github.com/wii-tools/wadlib"
 	"io/fs"
 	"io/ioutil"
@@ -135,6 +136,22 @@ func main() {
 
 	fmt.Println(aurora.Green("Done! Install ./output/patched.wad, sit back, and enjoy."))
 	writeOut("patched.wad", output)
+}
+
+// applyDefaultPatches applies the default patches to our main DOL.
+func applyDefaultPatches() {
+	var err error
+
+	mainDol, err = powerpc.ApplyPatchSet(OverwriteIOSPatch, mainDol)
+	check(err)
+	mainDol, err = powerpc.ApplyPatchSet(LoadCustomCA(), mainDol)
+	check(err)
+	mainDol, err = powerpc.ApplyPatchSet(PatchBaseDomain(), mainDol)
+	check(err)
+	mainDol, err = powerpc.ApplyPatchSet(NegateECTitle, mainDol)
+	check(err)
+	mainDol, err = powerpc.ApplyPatchSet(PatchECCfgPath, mainDol)
+	check(err)
 }
 
 // check has an anxiety attack if things go awry.

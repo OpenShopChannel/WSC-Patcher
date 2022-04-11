@@ -1,11 +1,17 @@
 package main
 
-var PatchECCfgPath = PatchSet{
-	Patch{
-		Name:     "Change EC Configuration Path",
-		AtOffset: 3319968,
+import (
+	. "github.com/wii-tools/powerpc"
+)
 
-		Before: []byte("ec.cfg\x00\x00"),
-		After:  []byte("osc.cfg\x00"),
+var PatchECCfgPath = PatchSet{
+	Name: "Change EC Configuration Path",
+	Patches: []Patch{
+		{
+			AtOffset: 3319968,
+
+			Before: []byte("ec.cfg\x00\x00"),
+			After:  []byte("osc.cfg\x00"),
+		},
 	},
 }

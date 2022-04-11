@@ -1,6 +1,10 @@
 package main
 
-import "strings"
+import (
+	"strings"
+
+	. "github.com/wii-tools/powerpc"
+)
 
 const (
 	NintendoBaseDomain = "shop.wii.com"
@@ -15,38 +19,41 @@ const (
 // See docs/patch_base_domain.md for more information.
 func PatchBaseDomain() PatchSet {
 	return PatchSet{
-		Patch{
-			Name: "Modify /startup domain",
+		Name: "Change Base Domain",
+		Patches: []Patch{
+			{
+				Name: "Modify /startup domain",
 
-			Before: []byte(ShowManualURL),
-			After:  padReplace(ShowManualURL),
-		},
-		Patch{
-			Name:     "Modify oss-auth URL",
-			AtOffset: 3180692,
+				Before: []byte(ShowManualURL),
+				After:  padReplace(ShowManualURL),
+			},
+			{
+				Name:     "Modify oss-auth URL",
+				AtOffset: 3180692,
 
-			Before: []byte(GetLogURL),
-			After:  padReplace(GetLogURL),
-		},
-		Patch{
-			Name:     "Modify trusted base domain prefix",
-			AtOffset: 3323432,
+				Before: []byte(GetLogURL),
+				After:  padReplace(GetLogURL),
+			},
+			{
+				Name:     "Modify trusted base domain prefix",
+				AtOffset: 3323432,
 
-			Before: []byte(TrustedDomain),
-			After:  padReplace(TrustedDomain),
-		},
-		Patch{
-			Name:     "Modify ECS SOAP endpoint URL",
-			AtOffset: 3268896,
+				Before: []byte(TrustedDomain),
+				After:  padReplace(TrustedDomain),
+			},
+			{
+				Name:     "Modify ECS SOAP endpoint URL",
+				AtOffset: 3268896,
 
-			Before: []byte(ECommerceBaseURL),
-			After:  padReplace(ECommerceBaseURL),
-		},
-		Patch{
-			Name: "Wildcard replace other instances",
+				Before: []byte(ECommerceBaseURL),
+				After:  padReplace(ECommerceBaseURL),
+			},
+			{
+				Name: "Wildcard replace other instances",
 
-			Before: []byte(NintendoBaseDomain),
-			After:  padReplace(baseDomain),
+				Before: []byte(NintendoBaseDomain),
+				After:  padReplace(baseDomain),
+			},
 		},
 	}
 }
@@ -60,5 +67,5 @@ func padReplace(url string) []byte {
 	}
 
 	padding := len(url) - len(replaced)
-	return append([]byte(replaced), emptyBytes(padding)...)
+	return append([]byte(replaced), EmptyBytes(padding)...)
 }
