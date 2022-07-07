@@ -15,7 +15,7 @@ var NegateECTitle = PatchSet{
 			// Generic function prolog
 			Before: Instructions{
 				STWU(R1, R1, 0xffe0),
-				MFSPR(),
+				MFSPR(R0, LR),
 			}.Bytes(),
 
 			// Immediately return true
@@ -30,7 +30,7 @@ var NegateECTitle = PatchSet{
 
 			Before: Instructions{
 				STWU(R1, R1, 0xfff0),
-				MFSPR(),
+				MFSPR(R0, LR),
 			}.Bytes(),
 			After: Instructions{
 				LI(R3, 1),
@@ -42,7 +42,7 @@ var NegateECTitle = PatchSet{
 			AtOffset: 619904,
 			Before: Instructions{
 				STWU(R1, R1, 0xfff0),
-				MFSPR(),
+				MFSPR(R0, LR),
 			}.Bytes(),
 			After: Instructions{
 				LI(R3, 1),
@@ -54,7 +54,7 @@ var NegateECTitle = PatchSet{
 			AtOffset: 588368,
 			Before: Instructions{
 				STWU(R1, R1, 0xffc0),
-				MFSPR(),
+				MFSPR(R0, LR),
 			}.Bytes(),
 			After: Instructions{
 				LI(R3, 0),
