@@ -136,7 +136,7 @@ Only 8 bits are set for `DBAT7U`, providing us with only 8 Mb of range (`0x93000
 
 IOS' executable code resides in the higher range of MEM2 (for our purposes, `0x939f0000` to `0x93a80000`), falling out of our accessible range.
 
-We must DBAT7U to contain `0x930001ff`, allowing us 16 Mb - from `0x93000000` to `0x94000000`, technically. We do not exceed `0x93a80000` for our purposes.
+We must update DBAT7U to contain `0x930001ff`, allowing us 16 Mb - from `0x93000000` to `0x94000000`, technically. We do not exceed `0x93a80000` for our purposes.
 
 ---
 Next, we need to devise a way to have the channel overwrite IOS memory.

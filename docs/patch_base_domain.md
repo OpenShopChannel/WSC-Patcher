@@ -26,4 +26,4 @@ We can identify five types of URLs within the main DOL to patch:
     - Appears to be present for `GetECConfig`, which is most likely not called within the Wii Shop channel. Instead, `ECommerceInterface#setWebSvcUrls` is preferred.
 
 ## Execution
-We simply iterate through these 5 types of URLs, replace the domain, and pad if appropiate. Doing so allows us to not fragment the rest of the URL with null bytes should padding be added.
+We simply iterate through these 5 types of URLs, replace the domain, and pad if appropriate. Doing so allows us to not fragment the rest of the URL with null bytes should padding be added.
