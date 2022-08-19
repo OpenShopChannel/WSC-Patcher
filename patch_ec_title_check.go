@@ -8,7 +8,7 @@ var NegateECTitle = PatchSet{
 	Name: "Negate EC Title Check",
 
 	Patches: []Patch{
-		Patch{
+		{
 			Name:     "Permit downloading all titles",
 			AtOffset: 619648,
 
@@ -24,7 +24,7 @@ var NegateECTitle = PatchSet{
 				BLR(),
 			}.Bytes(),
 		},
-		Patch{
+		{
 			Name:     "Mark all titles as managed",
 			AtOffset: 620656,
 
@@ -37,7 +37,7 @@ var NegateECTitle = PatchSet{
 				BLR(),
 			}.Bytes(),
 		},
-		Patch{
+		{
 			Name:     "Mark all tickets as managed",
 			AtOffset: 619904,
 			Before: Instructions{
@@ -49,7 +49,7 @@ var NegateECTitle = PatchSet{
 				BLR(),
 			}.Bytes(),
 		},
-		Patch{
+		{
 			Name:     "Nullify ec::removeAllTitles",
 			AtOffset: 588368,
 			Before: Instructions{
