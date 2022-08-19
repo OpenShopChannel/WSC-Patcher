@@ -61,24 +61,26 @@ func main() {
 	createDir("./output")
 	createDir("./cache")
 
-	var originalWad *wadlib.WAD
 	var err error
 
 	// Determine whether the Wii Shop Channel is cached.
 	if !filePresent("./cache/original.wad") {
 		log.Println("Downloading a copy of the original Wii Shop Channel, please wait...")
-		originalWad, err = GoNUSD.Download(0x00010002_48414241, 21, true)
+		var downloadedShop *wadlib.WAD
+		downloadedShop, err = GoNUSD.Download(0x00010002_48414241, 21, true)
 		check(err)
 
 		// Cache this downloaded WAD to disk.
-		contents, err := originalWad.GetWAD(wadlib.WADTypeCommon)
+		var contents []byte
+		contents, err = downloadedShop.GetWAD(wadlib.WADTypeCommon)
 		check(err)
 
 		os.WriteFile("./cache/original.wad", contents, 0755)
-	} else {
-		originalWad, err = wadlib.LoadWADFromFile("./cache/original.wad")
-		check(err)
 	}
+
+	var originalWad *wadlib.WAD
+	originalWad, err = wadlib.LoadWADFromFile("./cache/original.wad")
+	check(err)
 
 	// Determine whether a certificate authority was provided, or generated previously.
 	if !filePresent("./output/root.cer") {
@@ -104,7 +106,6 @@ func main() {
 	// Permit r/w access to MEM2_PROT via the TMD.
 	// See docs/patch_overwrite_ios.md for more information!
 	originalWad.TMD.AccessRightsFlags = 0x3
-
 	// Apply all DOL patches
 	fmt.Println(aurora.Green("Applying DOL patches..."))
 	applyDefaultPatches()
