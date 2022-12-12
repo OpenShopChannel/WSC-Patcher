@@ -22,7 +22,7 @@ We can identify five types of URLs within the main DOL to patch:
     - This suffix is compared on all pages. If the loaded page's domain does not match, most EC functionality is disabled.
   - `https://oss-auth.shop.wii.com`
     - Similar to the first, this appears 9 times and is only referenced once.
-  - `https://ecs.a.taur.cloud/ecs/services/ECommerceSOAP`
+  - `https://ecs.shop.wii.com/ecs/services/ECommerceSOAP`
     - Appears to be present for `GetECConfig`, which is most likely not called within the Wii Shop channel. Instead, `ECommerceInterface#setWebSvcUrls` is preferred.
 
 ## Execution
